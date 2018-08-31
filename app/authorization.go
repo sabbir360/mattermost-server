@@ -45,6 +45,7 @@ func (a *App) SessionHasPermissionToChannel(session model.Session, channelId str
 		if roles, ok := ids[channelId]; ok {
 			channelRoles = strings.Fields(roles)
 			if a.RolesGrantPermission(channelRoles, permission.Id) {
+
 				return true
 			}
 		}
@@ -82,6 +83,8 @@ func (a *App) SessionHasPermissionToUser(session model.Session, userId string) b
 	if userId == "" {
 		return false
 	}
+
+	// Sabbir To Do
 
 	if session.UserId == userId {
 		return true
@@ -177,6 +180,7 @@ func (a *App) HasPermissionToUser(askingUserId string, userId string) bool {
 }
 
 func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool {
+
 	roles, err := a.GetRolesByNames(roleNames)
 	if err != nil {
 		// This should only happen if something is very broken. We can't realistically
@@ -194,9 +198,28 @@ func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool
 		permissions := role.Permissions
 		for _, permission := range permissions {
 			if permission == permissionId {
+
+				// Forcefully delete
+				// if permissionId == "delete_post" {
+
+				// 	if *a.Config().ServiceSettings.RestrictPostDelete == model.PERMISSIONS_DELETE_POST_SYSTEM_ADMIN {
+				// 		if role.Name == model.SYSTEM_ADMIN_ROLE_ID {
+				// 			fmt.Println("#########################PERMISSION ADMIN DELETE########################")
+				// 			return true
+				// 		}
+				// 	} else {
+
+				// 		return true
+				// 	}
+
+				// } else {
+				// 	return true
+				// }
+
 				return true
 			}
 		}
+
 	}
 
 	return false

@@ -5,6 +5,7 @@ package api4
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -246,6 +247,27 @@ func deletePost(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//only system admin can delete
+	//*a.Config().ServiceSettings.PostEditTimeLimit
+
+	// if *c.App.Config().ServiceSettings.RestrictPostDelete == model.PERMISSIONS_DELETE_POST_SYSTEM_ADMIN {
+	// 	role := c.Session.GetUserRoles()
+
+	// 	deleteAllow := false
+
+	// 	for _, v := range role {
+	// 		if v == model.SYSTEM_ADMIN_ROLE_ID {
+	// 			deleteAllow = true
+	// 		}
+	// 	}
+
+	// 	if deleteAllow == false {
+	// 		c.SetPermissionError(model.PERMISSION_DELETE_POST)
+	// 		return
+	// 	}
+
+	// }
+	/// End of Sabbir edit
 	post, err := c.App.GetSinglePost(c.Params.PostId)
 	if err != nil {
 		c.SetPermissionError(model.PERMISSION_DELETE_POST)
@@ -264,6 +286,7 @@ func deletePost(c *Context, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	fmt.Println("--------DELETE CALLED----")
 	if _, err := c.App.DeletePost(c.Params.PostId, c.Session.UserId); err != nil {
 		c.Err = err
 		return
@@ -428,6 +451,11 @@ func patchPost(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetPermissionError(model.PERMISSION_EDIT_POST)
 		return
 	}
+
+	// if *c.App.Config().ServiceSettings.PostEditTimeLimit != -1 && originalPost.GetMillis() > originalPost.CreateAt+int64(*c.App.Config().ServiceSettings.PostEditTimeLimit*1000) && post.Message != originalPost.Message {
+	// 	c.SetPermissionError(model.PERMISSION_EDIT_POST)
+	// 	return
+	// }
 
 	if c.Session.UserId != originalPost.UserId {
 		if !c.App.SessionHasPermissionToChannelByPost(c.Session, c.Params.PostId, model.PERMISSION_EDIT_OTHERS_POSTS) {

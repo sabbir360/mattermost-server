@@ -870,6 +870,14 @@ func viewChannel(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// fmt.Println("----------------------------")
+	// fmt.Println(reflect.TypeOf(c.Session.Roles))
+	// fmt.Println("----------------------------")
+	// if strings.Contains(c.Session.Roles, model.SYSTEM_ADMIN_ROLE_ID) {
+	// 	c.SetPermissionError(model.PERMISSION_EDIT_POST)
+	// 	return
+	// }
+
 	if !c.App.SessionHasPermissionToUser(c.Session, c.Params.UserId) {
 		c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
 		return

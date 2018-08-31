@@ -6397,5 +6397,9 @@
   {
     "id": "web.incoming_webhook.user.app_error",
     "translation": "Couldn't find the user"
+  },
+  {
+    "id": "api.post.delete_post.permissions_system_admin.app_error",
+    "translation": "Couldn't delete post. Contact System Admin for details."
   }
 ]

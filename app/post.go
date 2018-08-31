@@ -352,7 +352,6 @@ func (a *App) SendEphemeralPost(userId string, post *model.Post) *model.Post {
 
 func (a *App) UpdatePost(post *model.Post, safeUpdate bool) (*model.Post, *model.AppError) {
 	post.SanitizeProps()
-
 	var oldPost *model.Post
 	if result := <-a.Srv.Store.Post().Get(post.Id); result.Err != nil {
 		return nil, result.Err
@@ -374,11 +373,10 @@ func (a *App) UpdatePost(post *model.Post, safeUpdate bool) (*model.Post, *model
 			return nil, err
 		}
 
-		if a.License() != nil {
-			if *a.Config().ServiceSettings.PostEditTimeLimit != -1 && model.GetMillis() > oldPost.CreateAt+int64(*a.Config().ServiceSettings.PostEditTimeLimit*1000) && post.Message != oldPost.Message {
-				err := model.NewAppError("UpdatePost", "api.post.update_post.permissions_time_limit.app_error", map[string]interface{}{"timeLimit": *a.Config().ServiceSettings.PostEditTimeLimit}, "", http.StatusBadRequest)
-				return nil, err
-			}
+		// Edit post time limit check.
+		if *a.Config().ServiceSettings.PostEditTimeLimit != -1 && model.GetMillis() > oldPost.CreateAt+int64(*a.Config().ServiceSettings.PostEditTimeLimit*1000) && post.Message != oldPost.Message {
+			err := model.NewAppError("UpdatePost", "api.post.update_post.permissions_time_limit.app_error", map[string]interface{}{"timeLimit": *a.Config().ServiceSettings.PostEditTimeLimit}, "", http.StatusBadRequest)
+			return nil, err
 		}
 	}
 
@@ -595,35 +593,71 @@ func (a *App) GetPostsAroundPost(postId, channelId string, offset, limit int, be
 }
 
 func (a *App) DeletePost(postId, deleteByID string) (*model.Post, *model.AppError) {
+
+	fmt.Println("______________DELETE AREA..................")
+	// *a.Session
+	// if *a.Config().ServiceSettings.RestrictPostDelete == {
+	// 	err := model.NewAppError("UpdatePost", "api.post.update_post.permissions_time_limit.app_error", map[string]interface{}{"timeLimit": *a.Config().ServiceSettings.PostEditTimeLimit}, "", http.StatusBadRequest)
+	// 	return nil, err
+	// }
+
 	if result := <-a.Srv.Store.Post().GetSingle(postId); result.Err != nil {
 		result.Err.StatusCode = http.StatusBadRequest
 		return nil, result.Err
 	} else {
 		post := result.Data.(*model.Post)
+		allowDelete := false
+		if *a.Config().ServiceSettings.RestrictPostDelete == model.SYSTEM_ADMIN_ROLE_ID {
 
-		if result := <-a.Srv.Store.Post().Delete(postId, model.GetMillis(), deleteByID); result.Err != nil {
-			return nil, result.Err
+			uchan := a.Srv.Store.User().Get(deleteByID)
+			var user *model.User
+			var roles []string
+			if chresult := <-uchan; chresult.Err != nil {
+				return nil, chresult.Err
+			} else {
+				user = chresult.Data.(*model.User)
+				roles = user.GetRoles()
+			}
+			fmt.Println(roles)
+			for _, role := range roles {
+
+				if role == model.SYSTEM_ADMIN_ROLE_ID {
+					allowDelete = true
+				}
+			}
+
+		} else {
+			allowDelete = true
 		}
 
-		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_DELETED, "", post.ChannelId, "", nil)
-		message.Add("post", a.PostWithProxyAddedToImageURLs(post).ToJson())
-		a.Publish(message)
+		if allowDelete == true {
+			if result := <-a.Srv.Store.Post().Delete(postId, model.GetMillis(), deleteByID); result.Err != nil {
+				return nil, result.Err
+			}
 
-		a.Go(func() {
-			a.DeletePostFiles(post)
-		})
-		a.Go(func() {
-			a.DeleteFlaggedPosts(post.Id)
-		})
+			message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_DELETED, "", post.ChannelId, "", nil)
+			message.Add("post", a.PostWithProxyAddedToImageURLs(post).ToJson())
+			a.Publish(message)
 
-		esInterface := a.Elasticsearch
-		if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
 			a.Go(func() {
-				esInterface.DeletePost(post)
+				a.DeletePostFiles(post)
 			})
-		}
+			a.Go(func() {
+				a.DeleteFlaggedPosts(post.Id)
+			})
 
-		a.InvalidateCacheForChannelPosts(post.ChannelId)
+			esInterface := a.Elasticsearch
+			if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+				a.Go(func() {
+					esInterface.DeletePost(post)
+				})
+			}
+
+			a.InvalidateCacheForChannelPosts(post.ChannelId)
+		} else {
+			err := model.NewAppError("DeletePost", "api.post.delete_post.permissions_system_admin.app_error", nil, "", http.StatusBadRequest)
+			return nil, err
+		}
 
 		return post, nil
 	}

@@ -64,6 +64,7 @@ func FindPath(path string, baseSearchPaths []string, filter func(os.FileInfo) bo
 			}
 		}
 	}
+	//
 	if binaryDir != "" {
 		for _, baseSearchPath := range baseSearchPaths {
 			searchPaths = append(
