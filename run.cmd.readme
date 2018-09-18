@@ -1,0 +1,3 @@
+# First
+- Go to web app directory and run `make test`
+- Run `go run -ldflags -X github.com/mattermost/mattermost-server/model.BuildNumber=dev -X 'github.com/mattermost/mattermost-server/model.BuildDate=Tue Sep 18 07:46:07 UTC 2018' -X github.com/mattermost/mattermost-server/model.BuildHash=0d9fe07d1940e9ff6c50a6c65a1b14002b30eb9d -X github.com/mattermost/mattermost-server/model.BuildHashEnterprise=none -X github.com/mattermost/mattermost-server/model.BuildEnterpriseReady=false ./cmd/mattermost/main.go --disableconfigwatch &`

@@ -3,15 +3,15 @@ dist: | check-style test package
 
 build-linux:
 	@echo Build Linux amd64
-	env GOOS=linux GOARCH=amd64 $(GO) install -i $(GOFLAGS) $(GO_LINKER_FLAGS) ./...
+	env GOOS=linux GOARCH=amd64 $(GO) install $(GOFLAGS) $(GO_LINKER_FLAGS) ./...
 
 build-osx: 
 	@echo Build OSX amd64
-	env GOOS=darwin GOARCH=amd64 $(GO) install -i $(GOFLAGS) $(GO_LINKER_FLAGS) ./...
+	env GOOS=darwin GOARCH=amd64 $(GO) install $(GOFLAGS) $(GO_LINKER_FLAGS) ./...
 
 build-windows: 
 	@echo Build Windows amd64
-	env GOOS=windows GOARCH=amd64 $(GO) install -i $(GOFLAGS) $(GO_LINKER_FLAGS) ./...
+	env GOOS=windows GOARCH=amd64 $(GO) install $(GOFLAGS) $(GO_LINKER_FLAGS) ./...
 
 build: build-linux build-windows build-osx
 
@@ -64,7 +64,7 @@ endif
 
 	@# Make osx package
 	@# Copy binary
-ifeq ($(BUILDER_GOOS_GOARCH),"darwin_amd64")
+ifeq ($(),"darwin_amd64")
 	cp $(GOPATH)/bin/mattermost $(DIST_PATH)/bin # from native bin dir, not cross-compiled
 	cp $(GOPATH)/bin/platform $(DIST_PATH)/bin # from native bin dir, not cross-compiled
 	@for plugin_package in $(PLUGIN_PACKAGES) ; do \
